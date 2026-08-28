@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Téléopération immersive d'un drone en réalité virtuelle</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            line-height: 1.6;
+        }
+
+        header {
+            background: #1f2933;
+            color: white;
+            padding: 50px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.2rem;
+        }
+
+        header p {
+            margin-top: 15px;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        nav {
+            background: white;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+            position: sticky;
+            top: 0;
+        }
+
+        nav a {
+            color: #333;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: bold;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        main {
+            max-width: 1000px;
+            margin: auto;
+            padding: 40px 20px;
+        }
+
+        section {
+            background: white;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+
+        h2 {
+            margin-top: 0;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            margin-top: 35px;
+        }
+
+        .architecture {
+            background: #f1f3f5;
+            padding: 20px;
+            border-left: 4px solid #333;
+            font-family: monospace;
+            white-space: pre-line;
+        }
+
+        .code-container {
+            margin-top: 15px;
+        }
+
+        pre {
+            background: #1e1e1e;
+            color: #f5f5f5;
+            padding: 20px;
+            overflow-x: auto;
+            border-radius: 6px;
+            max-height: 500px;
+        }
+
+        code {
+            font-family: Consolas, monospace;
+        }
+
+        .description {
+            background: #f7f7f7;
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            background: #1f2933;
+            color: white;
+            margin-top: 40px;
+        }
+
+        @media (max-width: 600px) {
+
+            header h1 {
+                font-size: 1.7rem;
+            }
+
+            nav a {
+                display: inline-block;
+                margin: 5px 8px;
+            }
+
+            section {
+                padding: 20px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<header>
+
+    <h1>Téléopération immersive d'un drone en réalité virtuelle</h1>
+
+    <p>
+        Documentation technique et codes sources du projet
+    </p>
+
+</header>
+
+
+<nav>
+
+    <a href="#projet">Projet</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#python">Python</a>
+    <a href="#unity">Unity</a>
+    <a href="#installation">Installation</a>
+
+</nav>
+
+
+<main>
+
+
+<!-- =====================================================
+     PRESENTATION
+===================================================== -->
+
+<section id="projet">
+
+    <h2>Présentation du projet</h2>
+
+    <p>
+        Ce projet a été réalisé dans le cadre d'un stage de recherche.
+        Son objectif est de développer une plateforme de téléopération
+        immersive permettant de visualiser et de contrôler un drone
+        DJI Tello à l'aide d'un casque de réalité virtuelle Meta Quest 2.
+    </p>
+
+    <p>
+        Le système permet notamment :
+    </p>
+
+    <ul>
+
+        <li>la récupération du flux vidéo du drone ;</li>
+
+        <li>le traitement des images en temps réel ;</li>
+
+        <li>la transmission du flux vidéo vers Unity ;</li>
+
+        <li>l'affichage du flux dans un casque de réalité virtuelle ;</li>
+
+        <li>le contrôle du drone à l'aide des joysticks des contrôleurs VR.</li>
+
+    </ul>
+
+</section>
+
+
+<!-- =====================================================
+     ARCHITECTURE
+===================================================== -->
+
+<section id="architecture">
+
+    <h2>Architecture du système</h2>
+
+    <p>
+        L'architecture générale du système repose sur une communication
+        entre le drone, un programme Python chargé de la gestion du drone
+        et du traitement d'image, et une application Unity exécutée dans
+        le casque de réalité virtuelle.
+    </p>
+
+
+    <div class="architecture">
+
+DJI TELLO
+    │
+    │ Flux vidéo Wi-Fi
+    ▼
+PYTHON
+    │
+    ├── Acquisition vidéo
+    │
+    ├── Traitement d'image
+    │      ├── Correction Gamma
+    │      ├── CLAHE
+    │      └── Sharpen
+    │
+    ├── Transmission TCP
+    │
+    ▼
+UNITY
+    │
+    ├── Réception du flux vidéo
+    │
+    ├── Affichage immersif
+    │
+    ▼
+META QUEST 2
+
+
+META QUEST 2
+    │
+    │ Joysticks
+    ▼
+UNITY
+    │
+    │ TCP
+    ▼
+PYTHON
+    │
+    │ Commandes RC
+    ▼
+DJI TELLO
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     PYTHON
+===================================================== -->
+
+<section id="python">
+
+    <h2>Codes Python</h2>
+
+
+    <h3>Programme principal – main.py</h3>
+
+    <div class="description">
+
+        <p>
+            Le programme principal initialise la connexion avec le DJI Tello,
+            active le flux vidéo et centralise les interactions avec le drone.
+        </p>
+
+        <p>
+            Cette architecture permet d'éviter plusieurs accès concurrents
+            au SDK du drone et améliore la stabilité du système.
+        </p>
+
+    </div>
+
+    <div class="code-container">
+
+<pre><code>
+import threading
+import time
+
+
+from djitellopy import Tello
+
+
+from serveur_video import video_server
+from serveur_joysticks import command_server
+
+
+# CONNEXION AU DRONE
+
+
+print("Connexion au drone...")
+
+
+tello = Tello()
+
+
+tello.connect()
+
+
+print("Batterie :", tello.get_battery(), "%")
+
+
+print("Activation du flux vidéo...")
+
+
+tello.streamon()
+
+
+tello.takeoff()
+
+
+time.sleep(2)
+
+
+# DONNÉES PARTAGÉES ENTRE LES THREADS
+
+
+shared_data = {
+
+
+   # Dernière image disponible
+   "frame": None,
+
+
+   # Dernière commande reçue
+   "command": (0, 0, 0, 0)
+
+
+}
+
+
+# THREAD UNIQUE ACCÉDANT AU TELLO
+
+
+def drone_thread():
+
+
+   frame_read = tello.get_frame_read()
+
+
+   print("Thread drone démarré.")
+
+
+   while True:
+
+
+       # Mise à jour de la dernière image
+
+
+       frame = frame_read.frame
+
+
+       if frame is not None:
+           shared_data["frame"] = frame
+
+
+       # Lecture de la dernière commande
+      
+
+
+       lr, fb, ud, yaw = shared_data["command"]
+
+
+          # Envoi au drone
+
+
+       tello.send_rc_control(
+           lr,
+           fb,
+           ud,
+           yaw
+       )
+
+
+       time.sleep(0.05)
+
+
+# LANCEMENT DES THREADS
+
+
+video_thread = threading.Thread(
+   target=video_server,
+   args=(shared_data,),
+   daemon=True
+)
+
+
+command_thread = threading.Thread(
+   target=command_server,
+   args=(shared_data,),
+   daemon=True
+)
+
+
+drone_thread = threading.Thread(
+   target=drone_worker,
+   daemon=True
+)
+
+
+video_thread.start()
+
+
+command_thread.start()
+
+
+drone_thread.start()
+
+
+# BOUCLE PRINCIPALE
+
+
+try:
+
+
+   while True:
+
+
+       time.sleep(1)
+
+
+except KeyboardInterrupt:
+
+
+   print("Arrêt demandé.")
+
+
+finally:
+
+
+   print("Fermeture...")
+
+
+   tello.send_rc_control(
+       0,
+       0,
+       0,
+       0
+   )
+
+
+   tello.streamoff()
+
+
+   tello.end()
+
+
+   print("Drone déconnecté.")
+
+
+</code></pre>
+
+    </div>
+
+
+
+    <h3>Serveur vidéo – serveur_video.py</h3>
+
+    <div class="description">
+
+        <p>
+            Ce module récupère les images provenant du drone, applique
+            éventuellement un traitement d'amélioration puis transmet les
+            images vers Unity via une connexion TCP.
+        </p>
+
+    </div>
+
+<pre><code>
+import socket
+import struct
+import time
+import cv2
+import keyboard
+from rehaussement import process_frame
+# CONFIGURATION
+HOST = "127.0.0.1"
+PORT = 5000
+
+
+PROCESSING_MODE = 0
+
+
+FPS = 30
+FRAME_PERIOD = 1 / FPS
+
+
+def video_server(shared_data):
+   global PROCESSING_MODE
+   print("Création du serveur vidéo...")
+   server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+   server.bind((HOST, PORT))
+   server.listen(1)
+   print("En attente de Unity (vidéo)...")
+   conn, addr = server.accept()
+   print("Unity connecté :", addr)
+   try:
+
+
+       while True:
+
+
+           start = time.time()
+
+
+           # Choix du traitement
+
+
+           if keyboard.is_pressed('0'):
+               PROCESSING_MODE = 0
+
+
+           elif keyboard.is_pressed('1'):
+               PROCESSING_MODE = 1
+
+
+           elif keyboard.is_pressed('2'):
+               PROCESSING_MODE = 2
+
+
+           elif keyboard.is_pressed('3'):
+               PROCESSING_MODE = 3
+
+
+           elif keyboard.is_pressed('4'):
+               PROCESSING_MODE = 4
+
+
+           # Récupération de la dernière image
+           # produite par le thread Drone
+
+
+           frame = shared_data["frame"]
+
+
+           if frame is None:
+               continue
+
+
+           # On travaille sur une copie
+           frame = frame.copy()
+
+
+           # Traitement
+
+
+           frame = process_frame(
+               frame,
+               PROCESSING_MODE
+           )
+
+
+           # Affichage local
+
+
+           display = frame.copy()
+
+
+           cv2.putText(
+               display,
+               f"Mode : {PROCESSING_MODE}",
+               (20, 40),
+               cv2.FONT_HERSHEY_SIMPLEX,
+               1,
+               (0, 255, 0),
+               2
+           )
+
+
+           cv2.imshow(
+               "Flux traité",
+               display
+           )
+
+
+           # Encodage JPEG
+
+
+           rgb = cv2.cvtColor(
+               frame,
+               cv2.COLOR_BGR2RGB
+           )
+           success, buffer = cv2.imencode(
+               ".jpg",
+               rgb,
+               [cv2.IMWRITE_JPEG_QUALITY, 80]
+           )
+
+
+           if not success:
+               continue
+
+
+           image_data = buffer.tobytes()
+
+
+           # Envoi TCP
+
+
+           conn.sendall(
+               struct.pack(">I", len(image_data))
+           )
+
+
+           conn.sendall(
+               image_data
+           )
+
+
+           # Quitter avec ESC
+
+
+           if cv2.waitKey(1) == 27:
+               break
+
+
+           # Limitation FPS
+
+
+           elapsed = time.time() - start
+
+
+           if elapsed < FRAME_PERIOD:
+               time.sleep(FRAME_PERIOD - elapsed)
+
+
+   except Exception as e:
+
+
+       print("Erreur serveur vidéo :", e)
+
+
+   finally:
+
+
+       print("Fermeture du serveur vidéo")
+
+
+       conn.close()
+       server.close()
+
+
+       cv2.destroyAllWindows()
+
+
+</code></pre>
+
+
+
+    <h3>Gestion des commandes – serveur_commandes.py</h3>
+
+    <div class="description">
+
+        <p>
+            Ce module reçoit les commandes générées par les joysticks
+            des contrôleurs VR et les convertit en commandes RC
+            compréhensibles par le DJI Tello.
+        </p>
+
+</div>
+
+<pre><code>
+import socket
+import struct
+
+
+HOST = "127.0.0.1"
+PORT = 5001
+
+
+
+
+def command_server(shared_data):
+   """
+   Reçoit les commandes de Unity
+   et les stocke dans shared_data.
+   Le thread Drone les enverra ensuite au Tello.
+   """
+
+
+   print("Création du serveur de commandes...")
+
+
+   server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+
+   server.bind((HOST, PORT))
+
+
+   server.listen(1)
+
+
+   print("En attente de Unity (commandes)...")
+
+
+   conn, addr = server.accept()
+
+
+   print("Unity connecté :", addr)
+
+
+   try:
+
+
+       while True:
+
+
+           # =====================================
+           # Lecture des 8 octets
+           # =====================================
+
+
+           data = b''
+
+
+           while len(data) < 8:
+
+
+               packet = conn.recv(8 - len(data))
+
+
+               if not packet:
+                   raise Exception("Connexion Unity interrompue.")
+
+
+               data += packet
+
+
+           # =====================================
+           # Décodage
+           # =====================================
+
+
+           lr, fb, ud, yaw = struct.unpack(">hhhh", data)
+
+
+           # =====================================
+           # Sauvegarde de la dernière commande
+           # =====================================
+
+
+           shared_data["command"] = (
+               lr,
+               fb,
+               ud,
+               yaw
+           )
+
+
+           # =====================================
+           # Affichage (debug)
+           # =====================================
+
+
+           print(
+               f"LR={lr:4d} | FB={fb:4d} | UD={ud:4d} | YAW={yaw:4d}"
+           )
+
+
+   except Exception as e:
+
+
+       print("Erreur serveur commandes :", e)
+
+
+   finally:
+
+
+       print("Fermeture du serveur commandes...")
+
+
+       conn.close()
+
+
+       server.close()
+
+
+</code></pre>
+
+
+
+    <h3>Traitement d'image – rehaussement.py</h3>
+
+    <div class="description">
+
+        <p>
+            Ce module contient les différents traitements d'amélioration
+            de l'image développés dans le cadre du projet.
+        </p>
+
+        <ul>
+
+            <li>Image originale ;</li>
+
+            <li>Correction Gamma ;</li>
+
+            <li>CLAHE ;</li>
+
+            <li>Gamma + CLAHE ;</li>
+
+            <li>Gamma + CLAHE + accentuation.</li>
+
+        </ul>
+
+    </div>
+
+<pre><code>
+"""
+image_processing.py
+
+
+Ce module regroupe les différents traitements d'image utilisés
+dans le projet de téléopération immersive du drone DJI Tello.
+
+
+Les traitements disponibles sont :
+
+
+Mode 0 : Image originale
+Mode 1 : Correction Gamma
+Mode 2 : CLAHE
+Mode 3 : Gamma + CLAHE
+Mode 4 : Gamma + CLAHE + Sharpen
+
+
+Toutes les fonctions prennent une image OpenCV (BGR)
+et retournent une image OpenCV (BGR).
+"""
+
+
+import cv2
+import numpy as np
+
+
+
+
+# ============================================================
+# CORRECTION GAMMA
+# ============================================================
+
+
+def gamma_correction(image, gamma=0.5):
+   """
+   Éclaircit ou assombrit l'image.
+
+
+   gamma < 1  : image plus lumineuse
+   gamma = 1  : aucune modification
+   gamma > 1  : image plus sombre
+   """
+
+
+   # Construction d'une table de correspondance (LUT)
+   table = np.array(
+       [((i / 255.0) ** gamma) * 255 for i in range(256)],
+       dtype=np.uint8
+   )
+
+
+   return cv2.LUT(image, table)
+
+
+
+
+# ============================================================
+# CLAHE
+# ============================================================
+
+
+def apply_clahe(image,
+               clip_limit=2.0,
+               tile_grid_size=(8, 8)):
+   """
+   Amélioration locale du contraste.
+
+
+   Le traitement est appliqué uniquement
+   sur la composante de luminance.
+   """
+
+
+   # Conversion BGR -> LAB
+   lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+
+
+   l, a, b = cv2.split(lab)
+
+
+   clahe = cv2.createCLAHE(
+       clipLimit=clip_limit,
+       tileGridSize=tile_grid_size
+   )
+
+
+   l = clahe.apply(l)
+
+
+   lab = cv2.merge((l, a, b))
+
+
+   return cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+
+
+
+
+# ============================================================
+# SHARPEN
+# ============================================================
+
+
+def sharpen(image):
+   """
+   Renforce légèrement les contours.
+   """
+
+
+   kernel = np.array(
+       [
+           [0, -1, 0],
+           [-1, 5, -1],
+           [0, -1, 0]
+       ],
+       dtype=np.float32
+   )
+
+
+   return cv2.filter2D(image, -1, kernel)
+
+
+
+
+# ============================================================
+# TRAITEMENT COMPLET
+# ============================================================
+
+
+def enhance(image):
+   """
+   Pipeline complet :
+
+
+   Gamma
+       ↓
+   CLAHE
+       ↓
+   Sharpen
+   """
+
+
+   image = gamma_correction(image, gamma=0.5)
+
+
+   image = apply_clahe(image)
+
+
+   image = sharpen(image)
+
+
+   return image
+
+
+
+
+# ============================================================
+# POINT D'ENTRÉE UNIQUE
+# ============================================================
+
+
+def process_frame(frame, mode=0):
+   """
+   Applique le traitement sélectionné.
+
+
+   Modes :
+
+
+   0 : Original
+   1 : Gamma
+   2 : CLAHE
+   3 : Gamma + CLAHE
+   4 : Gamma + CLAHE + Sharpen
+   """
+
+
+   if mode == 0:
+       return frame
+
+
+   elif mode == 1:
+       return gamma_correction(frame)
+
+
+   elif mode == 2:
+       return apply_clahe(frame)
+
+
+   elif mode == 3:
+
+
+       frame = gamma_correction(frame)
+
+
+       frame = apply_clahe(frame)
+
+
+       return frame
+
+
+   elif mode == 4:
+
+
+       return enhance(frame)
+
+
+   return frame
+
+
+</code></pre>
+
+
+</section>
+
+
+<!-- =====================================================
+     UNITY
+===================================================== -->
+
+<section id="unity">
+
+    <h2>Codes Unity</h2>
+
+
+    <h3>Réception vidéo – VideoReceiver.cs</h3>
+
+    <p>
+        Ce script établit une connexion TCP avec le programme Python,
+        reçoit les images compressées au format JPEG et les affiche
+        dans l'environnement Unity.
+    </p>
+
+<pre><code>
+using System;
+using System.Net.Sockets;
+using System.Threading;
+using UnityEngine;
+using UnityEngine.UI;
+
+public class VideoReceiver : MonoBehaviour
+{
+    // RawImage de l'interface Unity dans laquelle sera affiché le flux vidéo
+    public RawImage rawImage;
+
+    // Objet permettant la connexion TCP avec le serveur Python
+    private TcpClient client;
+
+    // Flux réseau associé à la connexion TCP
+    private NetworkStream stream;
+
+    // Thread dédié à la réception des images.
+    // Il permet de recevoir les données sans bloquer Unity.
+    private Thread receiveThread;
+
+    // Indique si la réception est toujours active
+    private bool running = true;
+
+    // Contient la dernière image JPEG reçue depuis Python.
+    // Cette variable est partagée entre deux threads :
+    // - le thread réseau
+    // - le thread principal Unity
+    private byte[] latestImage;
+
+    // Objet utilisé pour synchroniser l'accès à latestImage
+    // afin d'éviter les accès simultanés.
+    private readonly object imageLock = new object();
+
+    // Texture utilisée pour afficher la vidéo.
+    // IMPORTANT :
+    // Elle est créée UNE SEULE FOIS.
+    // Cela évite une allocation mémoire à chaque image.
+    private Texture2D texture;
+
+    void Start()
+    {
+        //--------------------------------------------------
+        // Création unique de la texture
+        //--------------------------------------------------
+
+        texture = new Texture2D(
+            2,
+            2,
+            TextureFormat.RGB24,
+            false
+        );
+
+        // Associer immédiatement cette texture au RawImage
+        rawImage.texture = texture;
+
+ 
+        // Connexion au serveur Python
+
+        client = new TcpClient("127.0.0.1", 5000);
+
+        stream = client.GetStream();
+
+        Debug.Log("Connexion au serveur réussie.");
+
+        //--------------------------------------------------
+        // Création du thread réseau
+        //--------------------------------------------------
+
+        receiveThread = new Thread(ReceiveVideo);
+
+        // Le thread est exécuté en arrière-plan
+        receiveThread.IsBackground = true;
+
+        receiveThread.Start();
+    }
+
+    void Update()
+    {
+        //--------------------------------------------------
+        // Update est exécuté par Unity environ
+        // une fois par frame.
+        //
+        // Toute modification d'une Texture2D doit
+        // obligatoirement être réalisée ici.
+        //--------------------------------------------------
+
+        byte[] imageToDisplay = null;
+
+        // Copier la dernière image reçue
+        lock (imageLock)
+        {
+            if (latestImage != null)
+            {
+                imageToDisplay = latestImage;
+
+                // On vide immédiatement la variable.
+                // Ainsi, si une nouvelle image arrive,
+                // elle remplacera directement l'ancienne.
+                latestImage = null;
+            }
+        }
+
+        // Si aucune image n'est disponible
+        if (imageToDisplay == null)
+            return;
+
+        //--------------------------------------------------
+        // Décodage JPEG
+        //--------------------------------------------------
+
+        bool success = texture.LoadImage(imageToDisplay);
+
+        if (!success)
+        {
+            Debug.LogWarning("Décodage JPEG impossible.");
+        }
+
+        // Rien d'autre à faire :
+        // le RawImage affiche déjà cette texture.
+    }
+
+    void ReceiveVideo()
+    {
+        //--------------------------------------------------
+        // Boucle exécutée dans le thread réseau.
+        //
+        // Elle tourne tant que la connexion est active.
+        //--------------------------------------------------
+
+        while (running)
+        {
+            try
+            {
+                //------------------------------------------
+                // Lecture de la taille de l'image
+                //------------------------------------------
+
+                // Les 4 premiers octets indiquent
+                // la taille du JPEG.
+
+                byte[] sizeBytes = ReadExact(4);
+
+                // Python envoie les données en Big Endian.
+                // Windows est Little Endian.
+                // Il faut donc inverser les octets.
+
+                if (BitConverter.IsLittleEndian)
+                {
+                    Array.Reverse(sizeBytes);
+                }
+
+                int imageSize = BitConverter.ToInt32(sizeBytes, 0);
+
+                //------------------------------------------
+                // Lecture du JPEG complet
+                //------------------------------------------
+
+                byte[] imageBytes = ReadExact(imageSize);
+
+                //------------------------------------------
+                // Stockage de la dernière image
+                //------------------------------------------
+
+                lock (imageLock)
+                {
+                    // IMPORTANT :
+                    //
+                    // On ne garde PAS une liste de frames.
+                    //
+                    // On remplace directement
+                    // l'image précédente.
+                    //
+                    // Cela permet de limiter la latence.
+                    latestImage = imageBytes;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.Log("Connexion interrompue : " + e.Message);
+
+                running = false;
+            }
+        }
+    }
+
+    byte[] ReadExact(int size)
+    {
+        //--------------------------------------------------
+        // TCP est un flux d'octets.
+        //
+        // Un appel à stream.Read() ne garantit PAS
+        // de recevoir tous les octets demandés.
+        //
+        // Cette fonction continue donc à lire
+        // jusqu'à avoir reçu exactement "size" octets.
+        //--------------------------------------------------
+
+        byte[] buffer = new byte[size];
+
+        int totalRead = 0;
+
+        while (totalRead < size)
+        {
+            int read = stream.Read(
+                buffer,
+                totalRead,
+                size - totalRead
+            );
+
+            if (read == 0)
+            {
+                throw new Exception("Connexion fermée.");
+            }
+
+            totalRead += read;
+        }
+
+        return buffer;
+    }
+
+    void OnApplicationQuit()
+    {
+        //--------------------------------------------------
+        // Arrêt propre lors de la fermeture de Unity
+        //--------------------------------------------------
+
+        running = false;
+
+        if (receiveThread != null)
+        {
+            receiveThread.Join(500);
+        }
+
+        if (stream != null)
+        {
+            stream.Close();
+        }
+
+        if (client != null)
+        {
+            client.Close();
+        }
+
+        Debug.Log("Connexion fermée.");
+    }
+}
+
+
+</code></pre>
+
+
+
+    <h3>Contrôle du drone – CommandSender.cs</h3>
+
+    <p>
+        Ce script récupère les valeurs des joysticks des contrôleurs
+        gauche et droit du Meta Quest 2.
+    </p>
+
+    <p>
+        Les commandes sont associées aux mouvements du drone :
+    </p>
+
+    <ul>
+
+        <li>Joystick gauche : déplacement gauche/droite et avant/arrière ;</li>
+
+        <li>Joystick droit : montée/descente et rotation.</li>
+
+    </ul>
+
+<pre><code>
+using UnityEngine;
+using UnityEngine.XR;
+
+using System;
+using System.Net.Sockets;
+
+public class CommandSender : MonoBehaviour
+{
+    TcpClient client;
+    NetworkStream stream;
+
+    InputDevice leftController;
+    InputDevice rightController;
+
+    void Start()
+    {
+        try
+        {
+            client = new TcpClient();
+
+            client.Connect("127.0.0.1", 5001);
+
+            stream = client.GetStream();
+
+            Debug.Log("Connexion Python OK");
+        }
+
+        catch (Exception e)
+        {
+            Debug.LogError(e.Message);
+        }
+
+        leftController = InputDevices.GetDeviceAtXRNode(
+            XRNode.LeftHand);
+
+        rightController = InputDevices.GetDeviceAtXRNode(
+            XRNode.RightHand);
+    }
+
+    void Update()
+    {
+        if (stream == null)
+            return;
+
+        if (!leftController.isValid)
+            leftController = InputDevices.GetDeviceAtXRNode(
+                XRNode.LeftHand);
+
+        if (!rightController.isValid)
+            rightController = InputDevices.GetDeviceAtXRNode(
+                XRNode.RightHand);
+
+        Vector2 left = Vector2.zero;
+
+        Vector2 right = Vector2.zero;
+
+        leftController.TryGetFeatureValue(
+            CommonUsages.primary2DAxis,
+            out left);
+
+        rightController.TryGetFeatureValue(
+            CommonUsages.primary2DAxis,
+            out right);
+
+        short lr = (short)(left.x * 100);
+
+        short fb = (short)(left.y * 100);
+
+        short ud = (short)(right.y * 100);
+
+        short yaw = (short)(right.x * 100);
+
+        byte[] buffer = new byte[8];
+
+        WriteInt16(buffer, 0, lr);
+
+        WriteInt16(buffer, 2, fb);
+
+        WriteInt16(buffer, 4, ud);
+
+        WriteInt16(buffer, 6, yaw);
+
+        stream.Write(buffer, 0, 8);
+    }
+
+    void WriteInt16(byte[] buffer, int index, short value)
+    {
+        short network = System.Net.IPAddress.HostToNetworkOrder(value);
+
+        byte[] b = BitConverter.GetBytes(network);
+
+        buffer[index] = b[0];
+
+        buffer[index + 1] = b[1];
+    }
+
+    void OnApplicationQuit()
+    {
+        if (stream != null)
+            stream.Close();
+
+        if (client != null)
+            client.Close();
+    }
+}
+
+
+</code></pre>
+
+
+</section>
+
+
+<!-- =====================================================
+     INSTALLATION
+===================================================== -->
+
+<section id="installation">
+
+    <h2>Installation et configuration</h2>
+
+
+    <h3>1. Environnement Python</h3>
+
+    <p>
+        Installer Python ainsi que les bibliothèques nécessaires :
+    </p>
+
+<pre><code>
+pip install djitellopy
+pip install opencv-python
+pip install keyboard
+</code></pre>
+
+
+    <h3>2. Configuration du drone</h3>
+
+    <ol>
+
+        <li>Allumer le DJI Tello.</li>
+
+        <li>Connecter l'ordinateur au réseau Wi-Fi du drone.</li>
+
+        <li>Vérifier la connexion avant de lancer le programme.</li>
+
+    </ol>
+
+
+    <h3>3. Configuration Unity</h3>
+
+    <ol>
+
+        <li>Créer ou ouvrir le projet Unity.</li>
+
+        <li>Installer et configurer OpenXR.</li>
+
+        <li>Installer le package Meta XR nécessaire au casque.</li>
+
+        <li>Ajouter les scripts VideoReceiver et CommandSender.</li>
+
+        <li>Configurer les ports TCP utilisés par Python.</li>
+
+    </ol>
+
+
+    <h3>4. Lancement du système</h3>
+
+    <ol>
+
+        <li>Allumer le DJI Tello.</li>
+
+        <li>Connecter le PC au réseau Wi-Fi du drone.</li>
+
+        <li>Connecter le Meta Quest 2 au PC.</li>
+
+        <li>Lancer le programme Python.</li>
+
+        <li>Lancer l'application Unity.</li>
+
+        <li>Vérifier la réception du flux vidéo dans le casque.</li>
+
+        <li>Tester les commandes avant tout essai en vol.</li>
+
+    </ol>
+
+</section>
+
+
+</main>
+
+
+<footer>
+
+    <p>
+        Projet de téléopération immersive d'un drone en réalité virtuelle
+    </p>
+
+    <p>
+        Codes sources et documentation technique
+    </p>
+
+</footer>
+
+
+</body>
+
+</html>
