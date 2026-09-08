@@ -2,7 +2,7 @@
 
 ## Présentation
 
-Ce dépôt contient le site de documentation technique développé dans le cadre d'un stage réalisé à l'Institut Fresnel.
+Ce dépôt contient le site de documentation technique développé dans le cadre d'un stage réalisé à l'Institut Fresnel ainsi que tous les codes .
 
 Le projet porte sur la conception d'une plateforme expérimentale permettant la **téléopération immersive d'un drone DJI Tello à l'aide d'un casque de réalité virtuelle Meta Quest 2**.
 
