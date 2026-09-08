@@ -26,6 +26,7 @@ La plateforme développée permet notamment :
 ## Architecture
 
 L'architecture générale du système est organisée de la manière suivante :
+```text
                     DJI TELLO
                        │
                        │ Wi-Fi
